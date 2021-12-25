@@ -5,6 +5,7 @@ import (
 	// "fmt"
 	// "io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/ceeghee/bookstore_users-api/domain/users"
 	services "github.com/ceeghee/bookstore_users-api/services/users"
@@ -43,7 +44,17 @@ func CreateUser(ctx *gin.Context) {
 }
 
 func GetUsers(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "pong")
+	userId, userErr := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
+	if userErr != nil {
+		err := errors.NewBadRequestError("user id should be a number")
+		ctx.JSON(err.Status, err)
+		return
+	}
+	user, getErr := services.GetUser(userId)
+	if getErr != nil {
+		ctx.JSON(getErr.Status, getErr)
+	}
+	ctx.JSON(http.StatusOK, user)
 }
 
 func SearchUser(ctx *gin.Context) {
