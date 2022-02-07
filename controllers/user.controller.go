@@ -4,6 +4,7 @@ import (
 	// "encoding/json"
 	// "fmt"
 	// "io/ioutil"
+
 	"net/http"
 	"strconv"
 
@@ -24,17 +25,15 @@ func CreateUser(ctx *gin.Context) {
 	// 	// TODO handle json.Unmarshal error
 	// 	return
 	// }
-
 	if err := ctx.ShouldBindJSON(&user); err != nil {
 		restErr := errors.NewBadRequestError("Invalid json body")
 		ctx.JSON(restErr.Status, restErr)
 		// TODO handle json error
 		return
 	}
-	result, saveErr := services.CreateUser(user)
+	result, saveErr := services.UsersService.CreateUser(user)
 
 	if saveErr != nil {
-		// TODO handle user creation err
 		ctx.JSON(saveErr.Status, saveErr)
 		return
 	}
@@ -43,20 +42,36 @@ func CreateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, result)
 }
 
-func GetUsers(ctx *gin.Context) {
+func Get(ctx *gin.Context) {
 	userId, userErr := strconv.ParseInt(ctx.Param("user_id"), 10, 64)
 	if userErr != nil {
 		err := errors.NewBadRequestError("user id should be a number")
 		ctx.JSON(err.Status, err)
 		return
 	}
-	user, getErr := services.GetUser(userId)
+	user, getErr := services.UsersService.GetUser(userId)
 	if getErr != nil {
 		ctx.JSON(getErr.Status, getErr)
+		return
 	}
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, user.Marshall(false))
 }
 
 func SearchUser(ctx *gin.Context) {
 	ctx.String(http.StatusNotImplemented, "implment me!")
+}
+
+func Login(c *gin.Context) {
+	var request users.LoginRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		restErr := errors.NewBadRequestError("invalid json body")
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+	user, err := services.UsersService.LoginUser(request)
+	if err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+	c.JSON(http.StatusOK, user.Marshall(false))
 }
